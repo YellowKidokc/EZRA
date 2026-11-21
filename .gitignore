@@ -8,3 +8,4 @@ __pycache__/
 # agent account secrets
 *.cred.xml
 synology_user_import.txt
+target/
