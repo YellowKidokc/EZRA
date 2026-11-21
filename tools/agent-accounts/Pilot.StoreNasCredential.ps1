@@ -1,11 +1,13 @@
 # Internal helper. Password arrives through stdin; never command arguments.
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'Pilot.Common.ps1')
+$stage='READ_INPUT'
 try {
     $record=[Console]::In.ReadLine()|ConvertFrom-Json
     Assert-PilotName $record.user
     Assert-PilotHost $record.host
     if ([Security.Principal.WindowsIdentity]::GetCurrent().Name.Split('\')[-1] -ne $record.user) { throw 'Unexpected account identity.' }
+    $stage='LOAD_NATIVE_API'
     Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -21,12 +23,20 @@ public static class EzraPilotNative {
  public static extern bool Write(ref Credential credential,UInt32 flags);
 }
 '@
+    $stage='PREPARE_CREDENTIAL'
     $c=New-Object EzraPilotNative+Credential
     $c.Type=2;$c.TargetName=$record.host;$c.UserName=$record.user;$c.Persist=2
     $c.CredentialBlob=[Runtime.InteropServices.Marshal]::StringToCoTaskMemUni($record.password)
     $c.CredentialBlobSize=[Text.Encoding]::Unicode.GetByteCount($record.password)
     try {
-        if (-not [EzraPilotNative]::Write([ref]$c,0)) { throw 'Credential Manager rejected the credential.' }
+        $stage='WRITE_CREDENTIAL'
+        if (-not [EzraPilotNative]::Write([ref]$c,0)) {
+            [Console]::Error.WriteLine('CredentialWriteError='+[Runtime.InteropServices.Marshal]::GetLastWin32Error())
+            exit 2
+        }
     } finally { [Runtime.InteropServices.Marshal]::ZeroFreeCoTaskMemUnicode($c.CredentialBlob) }
     exit 0
-} catch { exit 1 }
+} catch {
+    [Console]::Error.WriteLine('Stage='+$stage+';ExceptionType='+$_.Exception.GetType().FullName)
+    exit 1
+}

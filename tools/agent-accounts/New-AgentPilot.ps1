@@ -17,7 +17,7 @@ foreach ($path in @($state,$work,$install)) {
 }
 if (-not $PSCmdlet.ShouldProcess($name,'Provision pilot')) { return }
 foreach ($path in @($state,$work,$install)) { New-Item -ItemType Directory -Path $path -Force|Out-Null;Set-PilotAcl -Path $path -OwnerSid $owner -Readers:($path -eq $install) }
-foreach ($file in @('Pilot.Common.ps1','Pilot.StoreNasCredential.ps1','Start-AgentPilot.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $install $file) }
+foreach ($file in @('Pilot.Common.ps1','Pilot.StoreNasCredential.ps1','Start-AgentPilot.ps1','Pilot.Identity.ps1')) { Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $install $file) }
 $receipt=@{run=[guid]::NewGuid().ToString('N');utc=[DateTime]::UtcNow.ToString('o');agent=$name;nas_host=$NasHost;operator_sid=$owner;windows='NOT_CREATED';nas='NOT_CREATED';nas_permissions='NOT_CONFIGURED';snapshots='NOT_CONFIGURED';credential_manager='NOT_CONFIGURED';probe='NOT_RUN'}
 $created=$false
 try {
@@ -29,7 +29,7 @@ try {
     Set-PilotAcl -Path $work -OwnerSid $owner -AgentSid $account.SID.Value
     $cred=[pscredential]::new("$env:COMPUTERNAME\$name",$secure)
     $cred|Export-Clixml -LiteralPath (Join-Path $state 'agent-readonly.cred.xml')
-    $info=New-PilotProcessInfo -Credential $cred -Work $work -Arguments ('-NoProfile -NonInteractive -File "'+(Join-Path $install 'Pilot.StoreNasCredential.ps1')+'"')
+    $info=New-PilotProcessInfo -Credential $cred -Work $work -Arguments ('-NoProfile -NonInteractive -ExecutionPolicy RemoteSigned -File "'+(Join-Path $install 'Pilot.StoreNasCredential.ps1')+'"')
     $p=[Diagnostics.Process]::new();$p.StartInfo=$info
     try {
         [void]$p.Start()

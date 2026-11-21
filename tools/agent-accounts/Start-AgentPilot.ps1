@@ -12,7 +12,9 @@ $session='agent-readonly-'+[DateTime]::UtcNow.ToString('yyyyMMddTHHmmssZ')+'-'+[
 $inner="`$env:EZRA_AGENT='$name';`$env:EZRA_SESSION='$session';Set-Location -LiteralPath '$work';"
 if ($ProbeOnly) {
     $inner+="`$me=[Security.Principal.WindowsIdentity]::GetCurrent();@{name=`$me.Name;sid=`$me.User.Value;session=`$env:EZRA_SESSION;admin=([Security.Principal.WindowsPrincipal]`$me).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)}|ConvertTo-Json -Compress"
-    $args='-NoProfile -NonInteractive -EncodedCommand '+[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($inner))
+    # CreateProcessWithLogonW has a short command-line limit. Keep the probe in
+    # the installed, read-only helper instead of expanding it into base64.
+    $args='-NoProfile -NonInteractive -ExecutionPolicy RemoteSigned -File "C:\ProgramData\EZRA\AgentPilot\Pilot.Identity.ps1"'
     $p=[Diagnostics.Process]::new();$p.StartInfo=New-PilotProcessInfo -Credential $cred -Work $work -Arguments $args
     try {
         [void]$p.Start();$output=$p.StandardOutput.ReadToEnd()
