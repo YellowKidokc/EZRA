@@ -1,3 +1,3 @@
 # Declared dependency contract; application implementation is not present yet.
+# Python extras only (views, maps, recipes, DOCX). The Rust core uses Cargo.lock.
 PyYAML==6.0.3
-uuid6==2025.0.1; python_version < "3.14"

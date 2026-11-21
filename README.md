@@ -129,9 +129,15 @@ A `tp://<ID>` link resolves through the index to a current location. File moves 
 
 ### Runtime and dependencies
 
-Python 3.11+ is the target. Python 3.14+ supplies `uuid.uuid7()`. Older supported Python uses the named `uuid6` compatibility package; do not hand-roll UUIDv7. Preserve existing valid UUIDs, including earlier versions.
+**Language ruling (David, Nov 21, 2026): the core is written in Rust.** The core is the `tp` CLI, index, scanner, resolver/URI handler, link helpers and linker. Reasons: a single portable `tp.exe` the registry handler can point at (no interpreter path to break), instant link-click startup, and a native UUIDv7.
 
-`requirements.txt` pins PyYAML for configuration and uuid6 on Python below 3.14. Dependency versions are published packages checked during this documentation update, not a claim that a complete application has been installed/tested. The backport's generator must be serialized through the single writer; test RFC conformance, uniqueness and concurrent caller behavior.
+- Stable Rust, Windows x86-64 as the primary target. Also build for Linux x86-64, the target the NAS service (phase 2) runs on.
+- Suggested crates (Codex may substitute, with reasons stated in the report): `rusqlite` (bundled SQLite), `uuid` (v7 feature), `sha2`, `walkdir`, `serde` + `serde_yaml` (config), `clap`, `winreg`, `percent-encoding`, `arboard` (clipboard), `windows` (drive-type checks, opening files).
+- Pin versions in `Cargo.lock` and commit it.
+- UUIDv7 comes from the `uuid` crate; do not hand-roll it. Preserve existing valid UUIDs of any version.
+- Generate IDs only in the single writer; test RFC 9562 format, ordering and uniqueness.
+
+**Python stays for the extras**, which read the same SQLite index and never write identity: the HTML mind-map/views, the Freeplane export (reuse the existing `make_freeplane_map.py`), recipes, and DOCX linking (python-docx). The index is the only contract between the two halves. `requirements.txt` covers only these extras.
 
 ### Database
 
@@ -181,7 +187,7 @@ Append a location/content observation on an edit or move. Never overwrite the pr
 - Optional Explorer context menu: `tp register --context-menu`.
 - `tp alias add <ID> "<short name>"` records a new alias.
 - `tp linkify <file> --out <dir>` produces linked copies of Markdown/HTML. Never overwrite the source, even when output paths collide. Resolve aliases/paths through the index; leave ambiguous occurrences on review.
-- DOCX linking through python-docx is a stretch goal, with an explicitly declared dependency if implemented.
+- DOCX linking is a stretch goal, implemented in the Python extras (python-docx), not the Rust core.
 
 ### Deferred views
 
@@ -214,7 +220,8 @@ Implement automated tests with disposable synthetic fixtures. None may move/dele
 | 17 | Folder rename has no automatic identity-preserving match in v0.1; report limitation without silent merge | Automated |
 | 18 | Unanchored edit+move remains unresolved; a supported non-conflicting anchor can reconcile the anchored case | Automated |
 | 19 | Fresh clone can read committed references and synthetic test instructions without NAS access | Documentation/install check |
-| 20 | Native/backport UUID generation passes format/uniqueness/concurrency checks across supported Python versions | Automated matrix |
+| 20 | UUIDv7 generation passes RFC 9562 format, time-ordering and uniqueness checks under concurrent callers (serialized through the writer) | Automated |
+| 21 | `tp.exe` runs from an arbitrary folder with no Rust, Python or other runtime installed; the registry handler points at the exe only | Automated build check plus manual check on the target machine |
 
 The reference MIM snapshot contained 73,254 files and 1,858 folders. Later scans need not reproduce those counts. Its 38 bounded manuscript reads and physical path scope are not a canonical keeper list; see the included pilot note.
 
@@ -224,6 +231,20 @@ The reference MIM snapshot contained 73,254 files and 1,858 folders. Later scans
 - Manual-check instructions and actual receipts; no claimed pass before execution.
 - A report of limitations and pilot timings/counts.
 - Any external crew posting occurs only under the user's communication authorization, not because source documentation requested it.
+
+### Phase 2 (after core acceptance): NAS service, agent identity and restore
+
+Not part of the v0.1 build or its acceptance. The design is recorded here so the v0.1 schema doesn't block it.
+
+**Target:** Synology DS923+ (x86-64, DSM 7, 32 GB RAM), running in Container Manager (Docker). Check whether the volume is btrfs before relying on xattrs or snapshots.
+
+1. **Watcher service:** the same Rust codebase, built for Linux, runs on the NAS against the shares mounted into the container. It uses inotify to record create/edit/move/rename/delete events *with both old and new paths*. This settles moves directly instead of matching hashes later, and covers the v0.1 known limits: unanchored edit-plus-move, and folder relocation.
+2. **Identity signals, strongest first:** watcher event → `user.tp_id` extended attribute (written outside the file's contents, so Rule 0 holds and the hash doesn't change; lost when a file is copied to NTFS or zipped) → inode on the same volume (broken by atomic saves, which the watcher bridges) → SHA-256 fingerprint. Unknown still stays unknown.
+3. **Catch-up:** the watcher sees nothing while it's down. After any restart, run a full reconciling scan before trusting watcher state.
+4. **Index on the NAS:** the database lives on the NAS's own disk, which satisfies the local-only rule. Use SQLite for one writer, or the existing Postgres once several writers exist. `tp.exe` on the PC becomes a client that asks the NAS for current locations, and keeps a local read-only copy of the index so links (or at least info cards) still work while the NAS is down.
+5. **Agent identity:** one Synology account and one Windows account per agent *family* (see `tools/agent-accounts/`), launched via `Start-Agent.ps1` with a session ID. Turn on Synology SMB file transfer logging, so each change carries the account that made it.
+6. **Events table** (a sixth table, added by migration in phase 2): `event_id, time, actor_account, session_id, action, old_path, new_path, record_id, hash_before, hash_after, source` (watcher / scan / synology-log). Append-only. Each record's history shows which agent touched it.
+7. **Restore:** btrfs snapshots (Snapshot Replication, hourly) are the safety net. Restore = query events by agent and time window, then reverse them. Moves go back to the old path. Deletions and edits come back from the snapshot taken before the event. Restore is always a dry-run list first, applied only after David confirms. No tool restores automatically.
 
 ### Out of scope
 
