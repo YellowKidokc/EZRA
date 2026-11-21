@@ -33,3 +33,11 @@ The prior README remains in Git history. Reference summaries are attributed adap
 - [uuid6 package and API documentation](https://pypi.org/project/uuid6/).
 
 PyYAML 6.0.3 and uuid6 2025.0.1 were available during the documentation update. This establishes availability, not successful install/runtime/matrix acceptance. The compatibility generator is documented as not thread-safe; the build must serialize generation and test concurrent callers.
+
+## Revision — November 21, 2026
+
+| Issue | Resolution |
+|---|---|
+| Language | David's ruling: the core is Rust (a single portable `tp.exe`, fast handler startup, native UUIDv7 via the `uuid` crate). The Python/uuid6 runtime rows above are superseded for the core. Python remains for the extras (views, maps, recipes, DOCX), which only read the index. |
+| NAS service, agent identity, restore | Recorded as phase 2 in the README: inotify watcher on the DS923+, xattr IDs, a sixth table (events) by later migration, Synology per-agent accounts plus SMB logs, and btrfs snapshot restore as a confirmed dry-run first. |
+| Map view | Interactive HTML mind map is the planned primary view; Freeplane is a secondary export. |
