@@ -1,16 +1,13 @@
-# Specification example. Replace placeholders in an untracked config.yaml.
-# The future implementation must validate the database path is genuinely local.
-database_path: 'C:/Users/YOUR_NAME/AppData/Local/EZRA/tp_index.sqlite'
-scan_roots:
-  - '\\NAS_HOST\SHARE\Obsidian\MIM'
-write_ids: false
-quick_hash:
-  enabled: false
-  threshold_bytes: 209715200
-  identity_use: candidate_only
-skip_directories:
-  - .git
-  - node_modules
-  - .lake
-  - __pycache__
-  - .obsidian
+# Copy to config.yaml beside the executable and replace the placeholders.
+# Omit database_path to use the per-user local default.
+# Omit output_dir to use tp-output beside the database.
+# A relative path is relative to config.yaml.
+# For a Windows UNC source, use a YAML single-quoted path as shown.
+# scan_roots:
+#   - '\\NAS_HOST\SHARE\CORPUS'
+#   - '/path/to/local/corpus'
+scan_roots: []
+
+# Extra directory names to exclude. EZRA excludes .git, node_modules,
+# .lake, __pycache__ and .obsidian by default.
+skip_directories: []

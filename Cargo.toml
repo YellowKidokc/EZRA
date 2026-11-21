@@ -1,0 +1,29 @@
+[package]
+name = "ezra-tp"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "tp"
+path = "src/main.rs"
+
+[dependencies]
+aho-corasick = "1"
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+csv = "1"
+percent-encoding = "2"
+regex = "1"
+rusqlite = { version = "0.37", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+sha2 = "0.10"
+tempfile = "3"
+uuid = { version = "1", features = ["v7"] }
+walkdir = "2"
+
+[target.'cfg(windows)'.dependencies]
+arboard = { version = "3", default-features = false }
+winreg = "0.55"
+windows-sys = { version = "0.61", features = ["Win32_NetworkManagement_WNet", "Win32_Storage_FileSystem", "Win32_UI_Shell", "Win32_UI_WindowsAndMessaging", "Win32_System_WindowsProgramming"] }

@@ -15,6 +15,56 @@ This README contains two coordinated documents:
 
 Included background: [Linked Records reference](docs/references/LINKED_RECORD_SYSTEM.md), [scoped filing/tagging reference](docs/references/FILING_AND_TAGGING_REFERENCE.md), [MIM observations](docs/MIM_PILOT_OBSERVATIONS.md), and [change rationale](docs/DOCUMENTATION_DECISIONS.md). These are portable summaries, not verbatim replacements for the complete frozen Filing and Tagging Standard v0.4. No private NAS document is required to understand this build.
 
+## Build and run the core
+
+Use stable Rust and a C toolchain to build bundled SQLite. On Windows x86-64,
+install the Visual Studio C++ Build Tools with the Windows SDK for the default
+MSVC Rust target. On Linux x86-64, install GCC or Clang and the usual linker.
+Run these commands from the repository root.
+
+```sh
+cargo test --locked
+cargo build --release --locked
+```
+
+The binary is `target/release/tp.exe` on Windows or `target/release/tp` on
+Linux. Copy it to a stable folder for protocol registration. To configure it,
+copy `config.example.yaml` to `config.yaml` beside the executable. Relative paths
+in the config are resolved from the config directory. For CLI-only use you can
+pass `--config path/to/config.yaml`. Windows protocol and Explorer handlers use
+the configuration beside the executable.
+
+With no config, the database defaults to the EZRA data folder under
+`%LOCALAPPDATA%` on Windows or `${XDG_DATA_HOME:-$HOME/.local/share}/ezra` on
+Linux. Specify a scan root on the command line or set `scan_roots` in the config.
+Choose an output directory for EZRA-generated files outside your corpus.
+
+```text
+tp scan <root>
+tp scan --full-hash <root>
+tp link <indexed-file>
+tp alias add <record-uuid> "Core Canon Papers"
+tp open "tp://<record-uuid>?info"
+tp open "tp://<record-uuid>?folder"
+tp linkify <source.md> --out <separate-directory>
+tp register
+tp register --context-menu
+tp unregister
+```
+
+Registration commands run on Windows. The Linux opener uses `xdg-open`.
+Linux clipboard integration uses `wl-copy` or `xclip` when available.
+Use `tp link --no-clipboard` to print a link in a headless session.
+Each scan prints a JSON receipt and writes it alongside `needs_review.csv`
+in a new subdirectory under `output_dir`. Review the coverage and error
+fields before relying on an absence. Run `--write-ids` explicitly if you
+want ID insertion in supported UTF-8 Markdown or HTML. The normal scan
+leaves file contents alone. `--full-hash` rehashes files even when their
+size and modification time match the previous scan.
+
+See [core validation and HP checks](docs/CORE_VALIDATION.md) for test results,
+including the separate Windows click-through and real MIM pilot.
+
 ## Linked Records — beginning to end
 
 ### Rule 0: preserve originals
