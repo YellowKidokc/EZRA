@@ -185,7 +185,9 @@ Append a location/content observation on an edit or move. Never overwrite the pr
 
 ### Deferred views
 
-Label-filtered HTML, Freeplane maps and YAML recipe execution are later extensions. A future map uses UP metadata, DOWN contents, LEFT origins and RIGHT outgoing relations. Generated displays are not independently edited databases. PostgreSQL and nerve are out of the initial build.
+Label-filtered HTML, Freeplane maps and YAML recipe execution are later extensions.
+
+**Planned (David, Nov 21, 2026): HTML as the primary map view.** `tp://ID?map` should open an interactive HTML mind map generated from the index. It starts collapsed on the chosen record (e.g. a paper or series such as *Math is Moral*). Clicking a node expands its four directions (UP labels, DOWN contents, LEFT history/origins, RIGHT connections), and a details panel shows the record card. Every node carries its own `tp://` link, so clicking further opens that node's map. The goal is to show how a work was made, not just list files. Freeplane `.mm` stays as a secondary export. Not part of the core build or acceptance. A future map uses UP metadata, DOWN contents, LEFT origins and RIGHT outgoing relations. Generated displays are not independently edited databases. PostgreSQL and nerve are out of the initial build.
 
 ### Acceptance checks
 
