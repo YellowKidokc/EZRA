@@ -1,0 +1,6 @@
+name,description
+agent-claude,All Claude sessions
+agent-codex,Codex
+agent-gpt,ChatGPT and other cloud AIs
+agent-local,Ollama / n8n / local scripts
+agent-readonly,New or untrusted agents (grant read-only on the NAS)

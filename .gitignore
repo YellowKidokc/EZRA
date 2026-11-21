@@ -4,3 +4,7 @@ config.yaml
 *.db
 .venv/
 __pycache__/
+
+# agent account secrets
+*.cred.xml
+synology_user_import.txt
